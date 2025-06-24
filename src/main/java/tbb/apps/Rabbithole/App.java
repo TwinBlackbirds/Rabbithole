@@ -36,7 +36,7 @@ public class App
 	
 	// db
 	private static Sqlite sql = new Sqlite(log);
-	private static final long SessionID = (long) sql.startSession();
+	private static final long SessionID = sql.startSession();
 	
 	
 	// selenium browser tools
@@ -50,8 +50,8 @@ public class App
     	if (config != null) {
     		headless = config.headless;
     	}
-    	
-    	log.Write(LogLevel.BYPASS, "Headless mode: " + (headless ? "enabled" : "disabled"));
+    	log.Write(LogLevel.BYPASS, "Session started with ID: " + SessionID);
+    	log.Write(LogLevel.INFO, "Headless mode: " + (headless ? "enabled" : "disabled"));
     	
     	// set launch options
 		log.Write(LogLevel.DBG, "Setting Chrome launch options");
@@ -83,7 +83,7 @@ public class App
     		// close DB session 
     		log.Write(LogLevel.INFO, "Closing session");
     		sql.closeSession(SessionID);
-    		
+    		log.Write(LogLevel.BYPASS, "Session " + SessionID + " closed");
     		// close browser + all tabs
     		log.Write(LogLevel.INFO, "Closing Chrome browser");
             cd.quit();
@@ -150,7 +150,7 @@ public class App
     	    try {
     	        while (true) {
     	            // Clear line manually with carriage return and enough spaces
-    	            System.out.print("\rRunning... " + spinner[index] + "     ");
+    	            System.out.print("Running... " + spinner[index] + "     \r");
     	            System.out.flush();
 
     	            Thread.sleep(300); // can be configured
