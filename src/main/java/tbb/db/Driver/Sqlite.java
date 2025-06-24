@@ -1,6 +1,6 @@
 // Name: Michael Amyotte
 // Date: 6/16/25
-// Purpose: SQLite ORM example driver for JScraper template
+// Purpose: Sqlite driver for Rabbithole project
 
 package tbb.db.Driver;
 
@@ -10,6 +10,10 @@ import tbb.utils.Logger.LogLevel;
 import tbb.utils.Logger.Logger;
 import tbb.db.Schema.*;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 
 import org.hibernate.Session;
@@ -20,24 +24,30 @@ import org.hibernate.cfg.Configuration;
 
 public class Sqlite {
 	private Logger log;
-	private boolean dbg;
 	private SessionFactory db; // do not expose to users, instead write methods such as the writeChannel one below
 	
 	public Sqlite(Logger log) {
 		this(log, false);
 	}
 	
-	public Sqlite(Logger log, boolean dbg) {
+	public Sqlite(Logger log, boolean deleteDB) {
 		this.log = log;
-		this.dbg = dbg;
 		
 		Configuration config = new Configuration()
 				   .configure(); // use hibernate.cfg.xml
 		
-		if (this.dbg) {
-			System.out.println("Dialect = " + config.getProperty("hibernate.dialect"));	
+		// debug feature
+		if (deleteDB) {
+			try {
+				log.Write(LogLevel.BYPASS, "DEBUG ALERT: Deleting database");
+				Files.deleteIfExists(Paths.get("./database.sqlite"));
+				
+			} catch (IOException e) { 
+				log.Write(LogLevel.BYPASS, "Could not delete database! " + e);
+			}		
+			
 		}
-		
+		log.Write(LogLevel.DBG, "Dialect = " + config.getProperty("hibernate.dialect"));
 		this.db = config.buildSessionFactory();
 	}
 	
@@ -52,7 +62,7 @@ public class Sqlite {
 		}
 	}
 
-	public Number startSession() {
+	public long startSession() {
 		// create a session object and return the ID
 		tbb.db.Schema.Session s = new tbb.db.Schema.Session();
 		s.timeStarted = LocalDateTime.now();

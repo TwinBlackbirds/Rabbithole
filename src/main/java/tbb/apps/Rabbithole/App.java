@@ -35,7 +35,7 @@ public class App
 	private static final int EXTRA_WAIT_MS = 1000; // extra time spent waiting after el is present
 	
 	// db
-	private static Sqlite sql = new Sqlite(log);
+	private static Sqlite sql = new Sqlite(log, true); // debug mode enabled TODO: disable
 	private static final long SessionID = sql.startSession();
 	
 	
@@ -84,6 +84,7 @@ public class App
     		log.Write(LogLevel.INFO, "Closing session");
     		sql.closeSession(SessionID);
     		log.Write(LogLevel.BYPASS, "Session " + SessionID + " closed");
+    		
     		// close browser + all tabs
     		log.Write(LogLevel.INFO, "Closing Chrome browser");
             cd.quit();
@@ -97,9 +98,9 @@ public class App
     
     private static void bot() throws Exception {
     	// example DB method to be called here
-//    	sql.writeChannel(null);
+        // sql.writeChannel(null);
     	
-    	// initialize session in DB
+    	// initialize session in DB (already happens)
     }
     
     // queries the page every second until the DOM reports readyState = complete
@@ -149,11 +150,11 @@ public class App
     	    int index = 0;
     	    try {
     	        while (true) {
-    	            // Clear line manually with carriage return and enough spaces
-    	            System.out.print("Running... " + spinner[index] + "     \r");
+    	        	// move \r back to the beginning if it causes problems outputting errors
+    	            System.out.print("Running... " + spinner[index] + "     \r"); 
     	            System.out.flush();
 
-    	            Thread.sleep(300); // can be configured
+    	            Thread.sleep(300); // can be changed, 300 is arbitrary
     	            index = (index + 1) % spinner.length;
     	        }
     	    } catch (InterruptedException e) {
