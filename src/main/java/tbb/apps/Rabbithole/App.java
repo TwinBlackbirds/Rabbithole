@@ -36,6 +36,8 @@ public class App
 	
 	// db
 	private static Sqlite sql = new Sqlite(log);
+	private static final long SessionID = (long) sql.startSession();
+	
 	
 	// selenium browser tools
 	private static ChromeDriver cd;
@@ -78,13 +80,18 @@ public class App
     	} catch (Exception e) {
     		log.Write(LogLevel.ERROR, "Bot failed! " + e);
     	} finally {
+    		// close DB session 
+    		log.Write(LogLevel.INFO, "Closing session");
+    		sql.closeSession(SessionID);
+    		
+    		// close browser + all tabs
     		log.Write(LogLevel.INFO, "Closing Chrome browser");
-            // close browser + all tabs
             cd.quit();
+            
             // dump logs
             log.close();
+
             System.out.println("Process terminated with return code 0");
-        		
     	}
     }
     
@@ -92,6 +99,7 @@ public class App
     	// example DB method to be called here
 //    	sql.writeChannel(null);
     	
+    	// initialize session in DB
     }
     
     // queries the page every second until the DOM reports readyState = complete
