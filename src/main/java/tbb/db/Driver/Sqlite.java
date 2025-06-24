@@ -8,6 +8,9 @@ package tbb.db.Driver;
 import tbb.db.Schema.Channel;
 import tbb.utils.Logger.LogLevel;
 import tbb.utils.Logger.Logger;
+import tbb.db.Schema.*;
+
+import java.time.LocalDateTime;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -46,6 +49,39 @@ public class Sqlite {
 			s.getTransaction().commit();
 		} catch (Exception e) {
 			log.Write(LogLevel.ERROR, "WriteChannel operation failed! " + e);
+		}
+	}
+
+	public Number startSession() {
+		// create a session object and return the ID
+		tbb.db.Schema.Session s = new tbb.db.Schema.Session();
+		s.timeStarted = LocalDateTime.now();
+		try (Session _s = db.openSession()) {
+			_s.beginTransaction();
+			_s.persist(s);
+			_s.getTransaction().commit();
+			return s.id; // auto-generated
+		} catch (Exception e) {
+			log.Write(LogLevel.ERROR, "Could not instantiate session!" + e);
+			return 0;
+		}
+	}
+	
+	public void closeSession(long sessionID) {
+		try (Session _s = db.openSession()) {
+			// get old session and set the time terminated
+			tbb.db.Schema.Session s = _s.find(tbb.db.Schema.Session.class, sessionID);
+			if (s == null) {
+				throw new Exception("SessionID not found");
+			}
+			s.timeTerminated = LocalDateTime.now();
+			
+			// push update to database
+			_s.beginTransaction();
+			_s.merge(s);
+			_s.getTransaction().commit();
+		} catch (Exception e) {
+			log.Write(LogLevel.ERROR, "Could not close session!" + e);
 		}
 	}
 }
