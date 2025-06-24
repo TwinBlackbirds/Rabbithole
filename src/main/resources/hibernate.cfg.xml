@@ -28,6 +28,7 @@
     <!-- Add mapped entity classes here -->
     <!-- Example: -->
     <mapping class="tbb.db.Schema.Channel"></mapping>
-	
+	<mapping class="tbb.db.Schema.Session"></mapping>
+	<mapping class="tbb.db.Schema.Video"></mapping>
   </session-factory>
 </hibernate-configuration>
