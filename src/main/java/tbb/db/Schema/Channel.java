@@ -6,6 +6,9 @@ package tbb.db.Schema;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -13,89 +16,24 @@ import jakarta.persistence.*;
 public class Channel {
 
     @Id
-    @Column(name = "id", nullable = false) // ID column in the table
-    public String ID; // youtube.com/c/?
+    @Column(name = "id", nullable = false) 
+    public String id; // youtube.com/c/?
 
-    @Column(name = "name", nullable = false) // Name column in the table
-    public String Name;
+    @Column(name = "name", nullable = false) 
+    public String name;
 
-    @Column(name = "subscriber_count", nullable = false) // SubscriberCount column
-    public int SubscriberCount;
+    @Column(name = "subscriber_count", nullable = false)
+    public int subscriberCount;
 
-    @Column(name = "last_subscriber_count", nullable = false) // LastSubscriberCount column
-    public int LastSubscriberCount;
+    @Column(name = "time_checked", nullable = false) 
+    public LocalDateTime timeChecked;
 
-    @Column(name = "checked", nullable = false) // Checked timestamp
-    public LocalDateTime Checked;
-
-    @Column(name = "last_checked") // LastChecked timestamp (optional, so no nullable=false)
-    public LocalDateTime LastChecked;
-
-    @Transient // Since Duration is not directly supported by JPA, mark it as Transient
-    public Duration TimeSinceLastFound;
-
-    @Transient // SubscriberCountDifference is a calculated field, not stored in the DB
-    public int SubscriberCountDifference;
-
-    // Default constructor (JPA requirement)
-    public Channel() {
-    }
-
-    // Getters and setters (optional but recommended for JPA)
-    public String getID() {
-        return ID;
-    }
-
-    public void setID(String ID) {
-        this.ID = ID;
-    }
-
-    public String getName() {
-        return Name;
-    }
-
-    public void setName(String name) {
-        this.Name = name;
-    }
-
-    public int getSubscriberCount() {
-        return SubscriberCount;
-    }
-
-    public void setSubscriberCount(int subscriberCount) {
-        this.SubscriberCount = subscriberCount;
-    }
-
-    public int getLastSubscriberCount() {
-        return LastSubscriberCount;
-    }
-
-    public void setLastSubscriberCount(int lastSubscriberCount) {
-        this.LastSubscriberCount = lastSubscriberCount;
-    }
-
-    public LocalDateTime getChecked() {
-        return Checked;
-    }
-
-    public void setChecked(LocalDateTime checked) {
-        this.Checked = checked;
-    }
-
-    public LocalDateTime getLastChecked() {
-        return LastChecked;
-    }
-
-    public void setLastChecked(LocalDateTime lastChecked) {
-        this.LastChecked = lastChecked;
-    }
-
-    public Duration getTimeSinceLastFound() {
-        return Duration.between(LastChecked, Checked);
-    }
-
-    public int getSubscriberCountDifference() {
-        return getSubscriberCount() - getLastSubscriberCount();
-    }
+    @Column(name = "times_encountered", nullable = false)
+    public int timesEncountered = 0; // # of times we have seen this channel's videos already
+    
+    @OneToMany(mappedBy = "channel", cascade = CascadeType.ALL, orphanRemoval = true)
+    public Set<Video> videos = new HashSet<>();
+    
+    public Channel() { }
 
 }
