@@ -22,6 +22,8 @@ import tbb.utils.Config.ConfigPayload;
 import tbb.utils.Config.Configurator;
 import tbb.utils.Logger.LogLevel;
 import tbb.utils.Logger.Logger;
+import tbb.utils.Printer.Printer;
+import tbb.utils.Printer.State;
 
 public class App 
 {
@@ -37,7 +39,6 @@ public class App
 	// db
 	private static Sqlite sql = new Sqlite(log, true); // debug mode enabled TODO: disable
 	private static final long SessionID = sql.startSession();
-	
 	
 	// selenium browser tools
 	private static ChromeDriver cd;
@@ -69,7 +70,8 @@ public class App
     	js = (JavascriptExecutor) cd;
     	
     	// end-user feedback
-    	startStatusMessageDaemon();
+    	// TODO : start status message daemon here
+    	Printer.startBox();
     	
     	// String s = loopUntilInput();
     	try {
@@ -99,7 +101,7 @@ public class App
     private static void bot() throws Exception {
     	// example DB method to be called here
         // sql.writeChannel(null);
-    	
+    	Thread.sleep(5000);
     	// initialize session in DB (already happens)
     }
     
@@ -144,28 +146,7 @@ public class App
     	return searchTerm;
     }
     
-    private static void startStatusMessageDaemon() {
-    	Thread statusThread = new Thread(() -> {
-    	    char[] spinner = {'|', '/', '-', '\\'};
-    	    int index = 0;
-    	    try {
-    	        while (true) {
-    	        	// move \r back to the beginning if it causes problems outputting errors
-    	            System.out.print("Running... " + spinner[index] + "     \r"); 
-    	            System.out.flush();
-
-    	            Thread.sleep(300); // can be changed, 300 is arbitrary
-    	            index = (index + 1) % spinner.length;
-    	        }
-    	    } catch (InterruptedException e) {
-    	        System.out.println();
-    	        System.out.println("Spinner stopped.");
-    	    }
-    	});
-
-    	statusThread.setDaemon(true); // set as background thread that runs until main thread stops
-    	statusThread.start();
-    }
+    
     
     private static void jsClick(WebElement el) {
     	js.executeScript("arguments[0].click();", el);
