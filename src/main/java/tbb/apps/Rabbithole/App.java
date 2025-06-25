@@ -98,51 +98,29 @@ public class App
     }
     
     private static void bot() throws Exception {
-    	cd.get("https://youtube.com");
-    	sendState(State.NAVIGATING);
+    	navigateTo("https://youtube.com");
     	
     	Thread.sleep(5000);
     }
     
-    // queries the page every second until the DOM reports readyState = complete
+    private static void navigateTo(String URL) {
+    	sendState(State.NAVIGATING);
+    	cd.get(URL);
+    	waitUntilPageLoaded();
+    }
+    
+    // wait for TIMEOUT_SEC seconds OR until the DOM reports readyState = complete
     private static void waitUntilPageLoaded() {
+    	sendState(State.LOADING);
     	String pageName = cd.getTitle();
     	log.Write(LogLevel.INFO, String.format("Waiting for page '%s' to load", pageName));
-    	new WebDriverWait(cd, Duration.ofSeconds(1)).until(
+    	new WebDriverWait(cd, Duration.ofSeconds(TIMEOUT_SEC)).until(
                 webDriver -> ((JavascriptExecutor) webDriver)
                     .executeScript("return document.readyState")
                     .equals("complete")
             );
     	log.Write(LogLevel.INFO, "Page loaded");
-    }
-    
-    private static String loopUntilInput(String prompt, String confirmationFmt) {
-    	// loop and wait for a valid input from the user (to initiate searching)
-    	Scanner s = new Scanner(System.in);
-    	String searchTerm = "";
-    	try {
-    		// read input
-    		while (true) {
-        		System.out.print(prompt);
-        		String input = s.nextLine();
-        		if (input == null || input.trim().equals("")) {
-        			continue;
-        		}
-        		System.out.flush();
-        		System.out.print(String.format(confirmationFmt, input));
-        		String confirm = s.nextLine();
-        		if (confirm.trim().toLowerCase().equals("y")) {
-        			break;
-        		}
-        	}
-
-    	}
-    	finally { 
-    		// make sure scanner gets closed even if we get an interrupt
-    		s.close();
-    		log.Write(LogLevel.DBG, "Scanner closed");
-    	}
-    	return searchTerm;
+    	sendState(State.WAITING);
     }
     
     private static void sendState(State state) {
@@ -173,21 +151,25 @@ public class App
     }
     
     private static void waitForElementClickable(String selector) {
+    	sendState(State.LOADING);
     	new WebDriverWait(cd, Duration.ofSeconds(TIMEOUT_SEC)).until(
 		    ExpectedConditions.elementToBeClickable(By.cssSelector(selector))
 		);
     	try {
     		Thread.sleep(EXTRA_WAIT_MS);
     	} catch (Exception e) { }
+    	sendState(State.WAITING);
 	}
     
     private static void waitForElementVisible(String selector) {
+    	sendState(State.LOADING);
     	new WebDriverWait(cd, Duration.ofSeconds(TIMEOUT_SEC)).until(
 		    ExpectedConditions.visibilityOfElementLocated(By.cssSelector(selector))
 		);
     	try {
     		Thread.sleep(EXTRA_WAIT_MS);
     	} catch (Exception e) { }
+    	sendState(State.WAITING);
 	}
 }
 

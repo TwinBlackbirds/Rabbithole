@@ -18,6 +18,7 @@ public class StateHelper {
 		case NAVIGATING: return "Navigating";
 		case LOADING: return "Loading";
 		case COLLECTING: return "Collecting data";
+		case WAITING: return "Idle";
 		default: return "Unknown";
 		}
 	}
