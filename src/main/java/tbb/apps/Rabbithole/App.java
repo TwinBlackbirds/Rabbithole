@@ -129,7 +129,7 @@ public class App
     	 */
     	
     	String href = getFirstValidVideoID();
-    	navigateTo(href);
+    	navigateTo("https://youtube.com/watch?v="+href);
     	ensureAdsSkipped();
     	ensure144p();
     	
@@ -142,12 +142,19 @@ public class App
     }
     
     private static void ensureAdsSkipped() {
+    	waitUntilPageLoaded();
     	sendState(State.INTERACTING);
     	List<WebElement> ads = cd.findElements(By.cssSelector("div.video-ads > *"));
     	if (ads.size() > 0) { // there are ads to skip
     		List<WebElement> skipButton = cd.findElements(By.cssSelector("button.ytp-skip-ad-button"));
     		if (skipButton.size() > 0) { // in case the ad is unskippable
     			jsClick(skipButton.getFirst()); // should skip them all
+    		} else {
+    			while (cd.findElements(By.cssSelector("div.video-ads > *")).size() > 0) {
+    				try {
+    	    			Thread.sleep(3000); // wait for the ad to go away
+    	    		} catch (Exception e) { };
+    			}
     		}
     	}
     	sendState(State.WAITING);
@@ -161,6 +168,7 @@ public class App
     	}
     }
     private static List<WebElement> getSidebarVideos() {
+    	waitUntilPageLoaded();
     	sendState(State.SCANNING);
     	List<WebElement> videos = cd.findElements(By.cssSelector("a.ytd-compact-video-renderer"));
     	sendState(State.WAITING);
@@ -168,6 +176,7 @@ public class App
     }
     
     private static List<WebElement> getHomepageVideos() {
+    	waitUntilPageLoaded();
     	sendState(State.SCANNING);
     	List<WebElement> videos = cd.findElements(By.cssSelector("a#video-title-link"));
     	sendState(State.WAITING);
@@ -175,9 +184,9 @@ public class App
     }
     
     private static String getFirstValidVideoID() throws Exception {
+    	waitUntilPageLoaded();
     	sendState(State.SCANNING);
     	int idx = 0;
-    	
     	List<WebElement> videos = getVideos();
     	String videoID = null;
     	String href = null;
