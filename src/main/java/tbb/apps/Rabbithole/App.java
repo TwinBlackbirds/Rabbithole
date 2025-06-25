@@ -7,7 +7,10 @@
 package tbb.apps.Rabbithole;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -44,6 +47,9 @@ public class App
 	private static ChromeDriver cd;
 	private static JavascriptExecutor js; // to execute JS in browser context
 	
+	// video id regex
+	private static final Pattern pattern = Pattern.compile("(?<=\\?v\\=)[\\w-]+(?=[&/]?)", Pattern.CASE_INSENSITIVE);
+
 	
     public static void main( String[] args )
     {
@@ -70,7 +76,7 @@ public class App
     	js = (JavascriptExecutor) cd;
     	
     	// end-user feedback
-    	Printer.startBox();
+    	Printer.startBox("Rabbithole");
     	
     	// String s = loopUntilInput();
     	try {
@@ -99,8 +105,106 @@ public class App
     
     private static void bot() throws Exception {
     	navigateTo("https://youtube.com");
+    	// check if we are getting 'search to get started'
+    	List<WebElement> els = cd.findElements(By.cssSelector("ytd-feed-nudge-renderer[contents-location*=\"UNKNOWN\"]"));
+    	int attempts = 0;
+    	while (els.size() > 0 && attempts < MAX_RETRIES) {
+    		log.Write(LogLevel.WARN, "Getting served the 'search to get started' page");
+    		// we are on the page
+    		navigateTo("https://youtube.com/shorts/");
+    		waitForElementClickable("#reel-video-renderer .video-stream");
+    		WebElement vid = cd.findElement(By.cssSelector("#reel-video-renderer .video-stream"));
+    		jsClick(vid);
+    		Thread.sleep(3500); // 'watch' the short a little bit
+    		navigateTo("https://youtube.com/");
+    		els = cd.findElements(By.cssSelector("ytd-feed-nudge-renderer[contents-location*=\"UNKNOWN\"]"));
+    	}
+    	if (els.size() > 0) {
+    		throw new Exception("Could not get passed the 'search to get started' page!");
+    	}
+    	log.Write(LogLevel.INFO, "Passed the 'search to get started' page!"); // we are on the home page right here
     	
-    	Thread.sleep(5000);
+    	/*
+    	 * we can get started on collection now
+    	 */
+    	
+    	String href = getFirstValidVideoID();
+    	navigateTo(href);
+    	ensureAdsSkipped();
+    	ensure144p();
+    	
+    	
+    	
+    	
+    	// end of bot
+    	sendState(State.WAITING);
+    	Thread.sleep(5000); // for ease of debugging
+    }
+    
+    private static void ensureAdsSkipped() {
+    	sendState(State.INTERACTING);
+    	List<WebElement> ads = cd.findElements(By.cssSelector("div.video-ads > *"));
+    	if (ads.size() > 0) { // there are ads to skip
+    		List<WebElement> skipButton = cd.findElements(By.cssSelector("button.ytp-skip-ad-button"));
+    		if (skipButton.size() > 0) { // in case the ad is unskippable
+    			jsClick(skipButton.getFirst()); // should skip them all
+    		}
+    	}
+    	sendState(State.WAITING);
+    }
+    
+    private static List<WebElement> getVideos() {
+    	if (cd.getCurrentUrl().contains("watch?v=")) {
+    		return getSidebarVideos();
+    	} else {
+    		return getHomepageVideos();
+    	}
+    }
+    private static List<WebElement> getSidebarVideos() {
+    	sendState(State.SCANNING);
+    	List<WebElement> videos = cd.findElements(By.cssSelector("a.ytd-compact-video-renderer"));
+    	sendState(State.WAITING);
+    	return videos;
+    }
+    
+    private static List<WebElement> getHomepageVideos() {
+    	sendState(State.SCANNING);
+    	List<WebElement> videos = cd.findElements(By.cssSelector("a#video-title-link"));
+    	sendState(State.WAITING);
+    	return videos;
+    }
+    
+    private static String getFirstValidVideoID() throws Exception {
+    	sendState(State.SCANNING);
+    	int idx = 0;
+    	
+    	List<WebElement> videos = getVideos();
+    	String videoID = null;
+    	String href = null;
+    	// find the first video link with an href (should always be 0, but just in case)
+    	// also make sure we haven't already seen the video
+    	while (href == null || (videoID != null && sql.findSessionVideo(SessionID, videoID))) {
+    		href = videos.get(idx).getAttribute("href");
+    		Matcher m = pattern.matcher(href);
+    		videoID = (m.find() ? m.group() : null);
+    		idx++;
+    	}
+    	sendState(State.WAITING);
+    	return videoID;
+    }
+    
+    private static void ensure144p() throws Exception {
+    	// turn down the video quality to reduce bandwidth usage
+    	WebElement settingsBtn = cd.findElement(By.cssSelector("button[title=\"Settings\"]"));
+    	jsClick(settingsBtn);
+    	List<WebElement> qualitySelector = cd.findElements(By.cssSelector(".ytp-settings-menu div.ytp-panel-menu > *"));
+    	qualitySelector.removeLast(); // 'auto'
+    	WebElement lowest = qualitySelector.getLast(); // 144p
+    	jsClick(lowest);    	
+    }
+    
+    private static void grabChannel() {
+    	// get channel of video we are watching
     }
     
     private static void navigateTo(String URL) {
@@ -125,6 +229,10 @@ public class App
     
     private static void sendState(State state) {
     	String cleanURL = ensureSchema(cd.getCurrentUrl(), false);
+    	if (cleanURL.startsWith("data")) { // browser just started
+    		Printer.sh.update(state, "N/A");
+    		return;
+    	}
     	if (cleanURL.startsWith("www.")) {
     		cleanURL = cleanURL.replace("www.", "");
     	}
@@ -134,6 +242,16 @@ public class App
     
     private static void jsClick(WebElement el) {
     	js.executeScript("arguments[0].click();", el);
+    }
+    
+    private static void scrollPage(int scrolls) {
+    	sendState(State.LOADING);
+    	for (int i = 0; i < scrolls; i++) {
+    		js.executeScript(String.format("window.scrollBy(0, %d);", 1080*i), "");
+    		try { Thread.sleep(1000); } catch (InterruptedException e) { }
+    	}
+    	js.executeScript("window.scrollTo(0, 0);",  "");
+    	sendState(State.WAITING);
     }
     
     private static String ensureSchema(String url, boolean giveSchemaBack) {
