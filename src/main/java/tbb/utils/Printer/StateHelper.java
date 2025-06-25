@@ -1,0 +1,36 @@
+package tbb.utils.Printer;
+
+public class StateHelper {
+	public StateHelper() {
+		this(State.LOADING);
+	}
+	
+	public StateHelper(State startingState) {
+		update(startingState, "N/A");	
+	}
+	
+	private State state;
+	private String currentURL;
+	
+	@Override
+	public String toString() {
+		switch (getState()) {
+		case NAVIGATING: return "Navigating to page";
+		case LOADING: return "Loading";
+		case COLLECTING: return "Collecting data";
+		default: return "Unknown";
+		}
+	}
+
+	public State getState() {
+		return state;
+	}
+	public String getURL() {
+		return currentURL;
+	}
+
+	public void update(State state, String currentURL) {
+		this.state = state;
+		this.currentURL = currentURL;
+	}
+}
