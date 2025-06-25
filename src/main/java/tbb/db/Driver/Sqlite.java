@@ -51,7 +51,13 @@ public class Sqlite {
 		this.db = config.buildSessionFactory();
 	}
 	
-	// example write method
+	
+	/*
+	 * 
+	 * Channel Operations
+	 * 
+	 */
+	
 	public void writeChannel(Channel c) throws Exception {
 		try (Session s = db.openSession()){ // try-with-resources
 			s.beginTransaction();
@@ -61,7 +67,48 @@ public class Sqlite {
 			log.Write(LogLevel.ERROR, "WriteChannel operation failed! " + e);
 		}
 	}
-
+	
+	public void updateChannel(Channel c) throws Exception {
+		try (Session s = db.openSession()){ // try-with-resources
+			s.beginTransaction();
+			s.merge(c);
+			s.getTransaction().commit();
+		} catch (Exception e) {
+			log.Write(LogLevel.ERROR, "UpdateChannel operation failed! " + e);
+		}
+	}
+		
+	
+	public Channel getChannel(String ID) {
+		try (Session s = db.openSession()){ // try-with-resources
+			s.beginTransaction();
+			Channel result = s.find(Channel.class, ID);
+			s.getTransaction().commit();
+			return result;
+		} catch (Exception e) {
+			log.Write(LogLevel.ERROR, "findChannel operation failed! " + e);
+		}
+		return null;
+	}
+	
+	public boolean findChannel(String ID) {
+		try (Session s = db.openSession()){ // try-with-resources
+			Channel result = s.find(Channel.class, ID);
+			if (result != null) { return true; }
+		} catch (Exception e) {
+			log.Write(LogLevel.ERROR, "findChannel operation failed! " + e);
+		}
+		return false;
+	}
+	
+	
+	
+	/*
+	 * 
+	 * Session Operations
+	 * 
+	 */
+	
 	public long startSession() {
 		// create a session object and return the ID
 		tbb.db.Schema.Session s = new tbb.db.Schema.Session();
@@ -75,6 +122,15 @@ public class Sqlite {
 			log.Write(LogLevel.ERROR, "Could not instantiate session!" + e);
 			return 0;
 		}
+	}
+	
+	private tbb.db.Schema.Session getSession(long sessionID) {
+		try (Session _s = db.openSession()) {
+			return _s.find(tbb.db.Schema.Session.class, sessionID);
+		} catch (Exception e) {
+			log.Write(LogLevel.ERROR, "Could not get session with ID " + sessionID + "! " + e);
+		}
+		return null;
 	}
 	
 	public void closeSession(long sessionID) {
@@ -92,6 +148,87 @@ public class Sqlite {
 			_s.getTransaction().commit();
 		} catch (Exception e) {
 			log.Write(LogLevel.ERROR, "Could not close session!" + e);
+		}
+	}
+	
+	
+	/*
+	 * 
+	 * Video Operations
+	 * 
+	 */
+	public void writeVideo(Video v) {
+		try (Session s = db.openSession()){ // try-with-resources
+			s.beginTransaction();
+			s.persist(v);
+			s.getTransaction().commit();
+		} catch (Exception e) {
+			log.Write(LogLevel.ERROR, "writeVideo operation failed! " + e);
+		}
+	}
+	
+	public Video getVideo(String ID) {
+		try (Session s = db.openSession()){ // try-with-resources
+			Video result = s.find(Video.class, ID);
+			return result;
+		} catch (Exception e) {
+			log.Write(LogLevel.ERROR, "getVideo operation failed! " + e);
+		}
+		return null;
+	}
+	
+	public boolean findVideo(String ID) {
+		try (Session s = db.openSession()){ // try-with-resources
+			Video result = s.find(Video.class, ID);
+			if (result != null) { return true; }
+		} catch (Exception e) {
+			log.Write(LogLevel.ERROR, "findVideo operation failed! " + e);
+		}
+		return false;
+	}
+	
+	public void updateVideo(Video v) {
+		try (Session s = db.openSession()){ // try-with-resources
+			s.beginTransaction();
+			s.merge(v);
+			s.getTransaction().commit();
+		} catch (Exception e) {
+			log.Write(LogLevel.ERROR, "updateVideo operation failed! " + e);
+		}
+	}
+	
+	/*
+	 * 
+	 * Session x Video operations
+	 * 
+	 */
+	public void addVideo(long sessionID, String videoID) throws Exception {
+		
+		try (Session _s = db.openSession()){ // try-with-resources
+			
+			String hql = "SELECT COUNT(v) FROM Session s JOIN s.videos v WHERE s.id = :sessionId AND v.id = :videoId";
+			Long count = _s.createQuery(hql, Long.class)
+			               .setParameter("sessionId", sessionID)
+			               .setParameter("videoId", videoID)
+			               .getResultCount();
+
+			if (count > 0) {
+			    // Relation already exists
+				log.Write(LogLevel.INFO, String.format("Skipping adding video %s to session %d that was already watched", videoID, sessionID));
+				return;
+			}
+			
+			_s.beginTransaction();
+			Video v = _s.find(Video.class, videoID);
+			tbb.db.Schema.Session s = _s.find(tbb.db.Schema.Session.class, sessionID);
+			if (v == null) {
+				throw new Exception("Video with ID " + videoID + " not found!");
+			}
+			s.videos.add(v);
+			// make new record
+			_s.getTransaction().commit();
+		} catch (Exception e) {
+			log.Write(LogLevel.ERROR, "addVideo operation failed! " + e);
 		}
 	}
 }
