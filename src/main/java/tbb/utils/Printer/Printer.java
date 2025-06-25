@@ -1,7 +1,7 @@
 package tbb.utils.Printer;
 
 public class Printer {
-	private static StateHelper sh = new StateHelper();
+	public static StateHelper sh = new StateHelper();
 	
 	private static void spinner() {
 		

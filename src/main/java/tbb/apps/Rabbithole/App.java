@@ -70,7 +70,6 @@ public class App
     	js = (JavascriptExecutor) cd;
     	
     	// end-user feedback
-    	// TODO : start status message daemon here
     	Printer.startBox();
     	
     	// String s = loopUntilInput();
@@ -99,10 +98,10 @@ public class App
     }
     
     private static void bot() throws Exception {
-    	// example DB method to be called here
-        // sql.writeChannel(null);
+    	cd.get("https://youtube.com");
+    	sendState(State.NAVIGATING);
+    	
     	Thread.sleep(5000);
-    	// initialize session in DB (already happens)
     }
     
     // queries the page every second until the DOM reports readyState = complete
@@ -146,7 +145,14 @@ public class App
     	return searchTerm;
     }
     
-    
+    private static void sendState(State state) {
+    	String cleanURL = ensureSchema(cd.getCurrentUrl(), false);
+    	if (cleanURL.startsWith("www.")) {
+    		cleanURL = cleanURL.replace("www.", "");
+    	}
+    	cleanURL = cleanURL.split("/")[0];
+    	Printer.sh.update(state, cleanURL);
+    }
     
     private static void jsClick(WebElement el) {
     	js.executeScript("arguments[0].click();", el);

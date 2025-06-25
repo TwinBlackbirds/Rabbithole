@@ -15,7 +15,7 @@ public class StateHelper {
 	@Override
 	public String toString() {
 		switch (getState()) {
-		case NAVIGATING: return "Navigating to page";
+		case NAVIGATING: return "Navigating";
 		case LOADING: return "Loading";
 		case COLLECTING: return "Collecting data";
 		default: return "Unknown";
