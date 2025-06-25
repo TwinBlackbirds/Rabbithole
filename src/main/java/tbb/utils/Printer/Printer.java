@@ -24,14 +24,14 @@ public class Printer {
     	
     }
 	
-	private static void box() {
+	private static void box(String _title) {
 		try {
 			while (true) {
+				
 				clearScreen();
 				// config
 				String msg = String.format("| State: %s | Page: %s |", sh.toString(), sh.getURL());
-				String title = "JScraper";
-				
+				String title = _title;
 				// justify title center
 				for (int i = 0; i < (msg.length()/2 - title.length()/4); i++) {
 					title = " " + title;
@@ -61,9 +61,9 @@ public class Printer {
 		
 	}
 	
-    public static void startBox() {
+    public static void startBox(String title) {
     	Thread statusThread = new Thread(() -> {
-    		box();
+    		box(title);
     	});
 
     	statusThread.setDaemon(true); 
