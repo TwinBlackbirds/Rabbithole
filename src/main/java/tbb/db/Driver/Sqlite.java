@@ -231,4 +231,20 @@ public class Sqlite {
 			log.Write(LogLevel.ERROR, "addVideo operation failed! " + e);
 		}
 	}
+	
+	public boolean findSessionVideo(long sessionID, String videoID) throws Exception {
+		try (Session _s = db.openSession()) { // try-with-resources
+			
+			String hql = "SELECT COUNT(v) FROM Session s JOIN s.videos v WHERE s.id = :sessionId AND v.id = :videoId";
+			Long count = _s.createQuery(hql, Long.class)
+			               .setParameter("sessionId", sessionID)
+			               .setParameter("videoId", videoID)
+			               .getResultCount();
+
+			if (count > 0) {
+				return true;
+			}
+		}
+		return false;
+	}
 }
